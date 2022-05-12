@@ -241,3 +241,10 @@ public class AppDbContext : DbContext
     }
 }
 ```
+
+5. 更新資料庫遷移
+
+```shell
+#dotnet ef migrations add <本次異動名稱>
+dotnet ef migrations add AddGroupAndClaim
+```
