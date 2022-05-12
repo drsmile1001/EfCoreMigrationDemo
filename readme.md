@@ -17,8 +17,6 @@ dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
 
 Person.cs
 ```csharp
-namespace EfCoreMigrationDemo.Entities;
-
 public class Person
 {
     public Guid Id { get; set; }
@@ -30,8 +28,6 @@ public class Person
 AppDbContext.cs
 ```csharp
 using Microsoft.EntityFrameworkCore;
-
-namespace EfCoreMigrationDemo.Entities;
 
 public class AppDbContext : DbContext
 {
@@ -50,4 +46,48 @@ public class AppDbContext : DbContext
         });
     }
 }
+```
+4. 加入資料庫遷移
+```csharp
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+    {
+    }
+    //省略
+}
+```
+
+Program.cs
+```csharp
+//省略
+//簡單註冊DbContext
+builder.Services.AddDbContext<AppDbContext>(b => b.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+//繞過需要 ConnectionString
+builder.Services.AddDbContext<AppDbContext>(b =>
+{
+    var connectionString = configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString))
+        b.UseSqlServer();
+    else
+        b.UseSqlServer(connectionString);
+});
+//省略
+```
+[更正規做法參考](https://docs.microsoft.com/en-us/ef/core/cli/dbcontext-creation?tabs=dotnet-core-cli#from-a-design-time-factory)
+
+appsettings.json
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "<按狀況填寫>"
+  }
+}
+```
+
+```shell
+#dotnet ef migrations add <本次異動名稱>
+dotnet ef migrations add Init
+dotnet ef migrations script -o oupput.sql
 ```
