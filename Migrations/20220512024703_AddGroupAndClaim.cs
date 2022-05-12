@@ -9,9 +9,16 @@ namespace EfCoreMigrationDemo.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            migrationBuilder.RenameColumn(
                 name: "Name",
-                table: "People");
+                table: "People",
+                newName: "NickName"
+            );
+
+            migrationBuilder.Sql(@"DECLARE @v sql_variant 
+SET @v = N'暱稱'
+EXECUTE sp_updateextendedproperty N'MS_Description', @v, N'SCHEMA', N'dbo', N'TABLE', N'People', N'COLUMN', N'NickName'
+GO");
 
             migrationBuilder.AddColumn<string>(
                 name: "Email",
@@ -20,14 +27,6 @@ namespace EfCoreMigrationDemo.Migrations
                 nullable: false,
                 defaultValue: "",
                 comment: "信箱");
-
-            migrationBuilder.AddColumn<string>(
-                name: "NickName",
-                table: "People",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "",
-                comment: "暱稱");
 
             migrationBuilder.CreateTable(
                 name: "Claims",
@@ -111,17 +110,16 @@ namespace EfCoreMigrationDemo.Migrations
                 name: "Email",
                 table: "People");
 
-            migrationBuilder.DropColumn(
-                name: "NickName",
-                table: "People");
+            migrationBuilder.Sql(@"DECLARE @v sql_variant 
+SET @v = N'姓名'
+EXECUTE sp_updateextendedproperty N'MS_Description', @v, N'SCHEMA', N'dbo', N'TABLE', N'People', N'COLUMN', N'NickName'
+GO");
 
-            migrationBuilder.AddColumn<string>(
-                name: "Name",
+            migrationBuilder.RenameColumn(
+                name: "NickName",
                 table: "People",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "",
-                comment: "姓名");
+                newName: "Name"
+            );
         }
     }
 }

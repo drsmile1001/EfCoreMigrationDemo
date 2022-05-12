@@ -248,3 +248,39 @@ public class AppDbContext : DbContext
 #dotnet ef migrations add <本次異動名稱>
 dotnet ef migrations add AddGroupAndClaim
 ```
+
+修正遷移描述
+```csharp
+protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.RenameColumn(
+                name: "Name",
+                table: "People",
+                newName: "NickName"
+            );
+
+            migrationBuilder.Sql(@"DECLARE @v sql_variant 
+SET @v = N'暱稱'
+EXECUTE sp_updateextendedproperty N'MS_Description', @v, N'SCHEMA', N'dbo', N'TABLE', N'People', N'COLUMN', N'NickName'
+GO");
+        }
+
+protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql(@"DECLARE @v sql_variant 
+SET @v = N'姓名'
+EXECUTE sp_updateextendedproperty N'MS_Description', @v, N'SCHEMA', N'dbo', N'TABLE', N'People', N'COLUMN', N'NickName'
+GO");
+
+            migrationBuilder.RenameColumn(
+                name: "NickName",
+                table: "People",
+                newName: "Name"
+            );
+        }
+```
+
+```shell
+#dotnet ef migrations script [起點版本 = 0] [目標版本 = last]
+dotnet ef migrations script Init -o output.sql
+```
