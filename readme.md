@@ -91,3 +91,153 @@ appsettings.json
 dotnet ef migrations add Init
 dotnet ef migrations script -o oupput.sql
 ```
+
+5. 異動資料表定義
+
+```mermaid
+ classDiagram
+      User "*" <--> "*" Group
+      User "1" <--> "*" Claim
+
+```
+
+Person.cs
+```csharp
+public class Person
+{
+    public Person()
+    {
+        Groups = new HashSet<Group>();
+        Claims = new HashSet<Claim>();
+    }
+
+    public Guid Id { get; set; }
+
+    //異動欄位名稱
+    public string NickName { get; set; } = null!;
+
+    //新增欄位
+    public string Email { get; set; } = null!;
+
+    //新增多群組
+    public virtual ICollection<Group> Groups { get; set; }
+
+    //新增多宣稱
+    public virtual ICollection<Claim> Claims { get; set; }
+}
+```
+
+Group.cs
+```csharp
+public class Group
+{
+    public Group()
+    {
+        People = new HashSet<Person>();
+    }
+
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public virtual ICollection<Person> People { get; set; }
+}
+```
+
+Claim.cs
+```csharp
+public class Claim
+{
+    public Guid Id { get; set; }
+
+    public Guid PersonId { get; set; }
+
+    public string Type { get; set; } = null!;
+
+    public string Value { get; set; } = null!;
+
+    public virtual Person Person { get; set; } = null!;
+}
+```
+
+AppDbContext.cs
+```csharp
+public class AppDbContext : DbContext
+{
+    //省略
+    public virtual DbSet<Group> Groups { get; set; } = null!;
+
+    public virtual DbSet<Claim> Claims { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Person>(entity =>
+        {
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasComment("ID");
+
+            //異動
+            entity.Property(e => e.NickName)
+                .HasComment("暱稱");
+
+            //新增
+            entity.Property(e => e.Email)
+                .HasComment("信箱");
+
+            //新增多對多關係
+            entity.HasMany(e => e.Groups)
+                .WithMany(e => e.People)
+                .UsingEntity<PersonGroup>(c =>
+                {
+                    c.Property(c => c.PersonId)
+                        .HasComment("人員ID");
+
+                    c.Property(c => c.GroupId)
+                        .HasComment("群組ID");
+
+                    c.HasOne(e => e.Person)
+                        .WithMany()
+                        .HasForeignKey(e => e.PersonId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    c.HasOne(e => e.Group)
+                        .WithMany()
+                        .HasForeignKey(e => e.GroupId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+        });
+
+        //新增
+        modelBuilder.Entity<Group>(entity =>
+        {
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasComment("ID");
+
+            entity.Property(e => e.Name)
+                .HasComment("名稱");
+        });
+
+        //新增
+        modelBuilder.Entity<Claim>(entity =>
+        {
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasComment("ID");
+
+            entity.Property(e => e.Type)
+                .HasComment("類型");
+
+            entity.Property(e => e.Value)
+                .HasComment("值");
+            
+            //新增多對一關係
+            entity.HasOne(e => e.Person)
+                .WithMany(e => e.Claims)
+                .HasForeignKey(e => e.PersonId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+}
+```
